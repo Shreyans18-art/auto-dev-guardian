@@ -12,33 +12,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Install Node.js
-        uses: actions/setup-node@v3
-        with:
-            node-version: '18'   
-  
-      - name: Install dependencies
-        working-directory: ./my-bot
-        run:  npm install
+      - name: Checkout code
+        uses: actions/checkout@v3
 
       - name: Debug current directory
         run: pwd
         
-      - name: List files (level 1)
+      - name: List top-level files
         run: ls
         
-      - name: FUll structure
+      - name: Full structure
         run: ls -R  
+        
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+            node-version: '18'   
         
       - name: Debug folders
         run: ls
         
-      - name: Run FaultPulse Bots
-        run: node core/runner.js https://example.com  
-
-      - name: Checkout code
-        uses: actions/checkout@v4
-
       - name: Install g++
         run: sudo apt-get update && sudo apt-get install -y g++
 
