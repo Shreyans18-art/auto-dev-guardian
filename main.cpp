@@ -1,7 +1,6 @@
 #include <iostream>
-using namespace std;
 
-int main(){
-    cout << "Hello CI/CD" << endl;
+int main() {
+    std::cout << "Hello CI/CD" << std::endl;
     return 0;
 }
