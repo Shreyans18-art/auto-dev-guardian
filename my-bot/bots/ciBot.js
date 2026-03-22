@@ -9,11 +9,19 @@ export default (app) => {
 
     const issue_number = pr.number;
 
-    let message =
-      conclusion === "success"
-        ? "✅ CI Passed! Ready to merge 🚀"
-        : "❌ CI Failed! Fix your code before merging 😤";
+   if (conclusion === "success") {
+  message = "✅ CI Passed! Ready to merge 🚀";
 
+  try {
+    await context.octokit.pulls.merge({
+      owner: context.payload.repository.owner.login,
+      repo: context.payload.repository.name,
+      pull_number: issue_number,
+    });
+  } catch (err) {
+    console.log("Auto merge failed:", err.message);
+  }
+}
     await context.octokit.issues.createComment({
       owner: context.payload.repository.owner.login,
       repo: context.payload.repository.name,
