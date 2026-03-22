@@ -1,33 +1,37 @@
 export default (app) => {
 
-  app.on("check_run.completed", async (context) => {
+  app.on("check_suite.completed", async (context) => {
 
-    const conclusion = context.payload.check_run.conclusion;
+    const conclusion = context.payload.check_suite.conclusion;
 
-    const pr = context.payload.check_run.pull_requests[0];
-    if (!pr) return;
+    if (conclusion !== "success") return;
 
-    const issue_number = pr.number;
+    const prs = context.payload.check_suite.pull_requests;
 
-   if (conclusion === "success") {
-  message = "✅ CI Passed! Ready to merge 🚀";
+    if (!prs || prs.length === 0) return;
 
-  try {
-    await context.octokit.pulls.merge({
-      owner: context.payload.repository.owner.login,
-      repo: context.payload.repository.name,
-      pull_number: issue_number,
-    });
-  } catch (err) {
-    console.log("Auto merge failed:", err.message);
-  }
-}
-    await context.octokit.issues.createComment({
-      owner: context.payload.repository.owner.login,
-      repo: context.payload.repository.name,
-      issue_number,
-      body: message,
-    });
+    const pr = prs[0];
+
+    const owner = context.payload.repository.owner.login;
+    const repo = context.payload.repository.name;
+
+    try {
+      await context.octokit.issues.createComment({
+        owner,
+        repo,
+        issue_number: pr.number,
+        body: "✅ CI Passed! Auto-merging PR 🚀",
+      });
+
+      await context.octokit.pulls.merge({
+        owner,
+        repo,
+        pull_number: pr.number,
+      });
+
+    } catch (err) {
+      console.log("Auto merge failed:", err.message);
+    }
 
   });
 
