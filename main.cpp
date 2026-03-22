@@ -1,6 +1,6 @@
 #include <iostream>
 
 int main() {
-    std::cout << "Hello CI/CD" << std::endl;
+    std::cout << "Final test" << std::endl;
     return 0;
 }
