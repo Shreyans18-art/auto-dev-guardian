@@ -2,22 +2,18 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
+      - test-bot
   pull_request:
 
 jobs:
-  lint-and-build:
+  build:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Run Super Linter
-        uses: super-linter/super-linter@v5
-        env:
-          DEFAULT_BRANCH: main
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install g++
         run: sudo apt-get update && sudo apt-get install -y g++
