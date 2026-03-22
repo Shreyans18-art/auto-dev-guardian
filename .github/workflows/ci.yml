@@ -18,13 +18,14 @@ jobs:
             node-version: '18'   
   
       - name: Install dependencies
-        run: |
-             cd my-bot
-             npm install
+        working-directory: ./my-bot
+        run:  npm install
+        
+      - name: Debug folders
+        run: ls
         
       - name: Run FaultPulse Bots
-        run: |
-          node core/runner.js https://example.com  
+        run: node core/runner.js https://example.com  
 
       - name: Checkout code
         uses: actions/checkout@v4
