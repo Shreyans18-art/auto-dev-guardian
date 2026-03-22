@@ -2,9 +2,13 @@ export default (app) => {
 
   app.on("check_run.completed", async (context) => {
 
+    console.log("🔥 check_run event triggered");
+
     const check = context.payload.check_run;
 
-    // ✅ Only act when CI completes successfully
+    console.log("Conclusion:", check.conclusion);
+    console.log("PRs:", check.pull_requests);
+
     if (check.conclusion !== "success") return;
 
     const prs = check.pull_requests;
@@ -16,23 +20,18 @@ export default (app) => {
     const repo = context.payload.repository.name;
 
     try {
-      // 💬 Comment
-      await context.octokit.issues.createComment({
-        owner,
-        repo,
-        issue_number: pr.number,
-        body: "✅ CI Passed! Auto-merging PR 🚀",
-      });
+      console.log("🚀 Attempting merge...");
 
-      // 🔥 Merge
       await context.octokit.pulls.merge({
         owner,
         repo,
         pull_number: pr.number,
       });
 
+      console.log("✅ MERGED SUCCESSFULLY");
+
     } catch (err) {
-      console.log("Auto merge failed:", err.message);
+      console.log("❌ Merge failed:", err.message);
     }
 
   });
