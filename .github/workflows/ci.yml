@@ -6,12 +6,18 @@ on:
   pull_request:
 
 jobs:
-  build:
+  lint-and-build:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Run Super Linter
+        uses: super-linter/super-linter@v5
+        env:
+          DEFAULT_BRANCH: main
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install g++
         run: sudo apt-get install g++
