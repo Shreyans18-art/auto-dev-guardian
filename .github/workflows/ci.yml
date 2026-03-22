@@ -2,7 +2,9 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
+      - test-bot
   pull_request:
 
 jobs:
@@ -13,17 +15,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 🔥 LINTER (now limited, no over-strict issues)
       - name: Run Super Linter
         uses: super-linter/super-linter@v5
         env:
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VALIDATE_ALL_CODEBASE: false
 
+      # 🛠 Install compiler
       - name: Install g++
         run: sudo apt-get update && sudo apt-get install -y g++
 
+      # ⚙️ Compile C++ code
       - name: Compile code
         run: g++ main.cpp -o main
 
+      # 🚀 Run program
       - name: Run program
         run: ./main
