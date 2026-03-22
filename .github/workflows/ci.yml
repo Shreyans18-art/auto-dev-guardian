@@ -20,6 +20,15 @@ jobs:
       - name: Install dependencies
         working-directory: ./my-bot
         run:  npm install
+
+      - name: Debug current directory
+        run: pwd
+        
+      - name: List files (level 1)
+        run: ls
+        
+      - name: FUll structure
+        run: ls -R  
         
       - name: Debug folders
         run: ls
