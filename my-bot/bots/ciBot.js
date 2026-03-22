@@ -1,52 +1,39 @@
 export default (app) => {
 
-  app.on("pull_request.opened", async (context) => {
+  app.on("check_run.completed", async (context) => {
 
-    const pr = context.payload.pull_request;
+    const check = context.payload.check_run;
+
+    // ✅ Only act when CI completes successfully
+    if (check.conclusion !== "success") return;
+
+    const prs = check.pull_requests;
+    if (!prs || prs.length === 0) return;
+
+    const pr = prs[0];
+
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
-    const prNumber = pr.number;
 
-    // ⏳ Wait for CI to finish
-    setTimeout(async () => {
+    try {
+      // 💬 Comment
+      await context.octokit.issues.createComment({
+        owner,
+        repo,
+        issue_number: pr.number,
+        body: "✅ CI Passed! Auto-merging PR 🚀",
+      });
 
-      try {
-        const checks = await context.octokit.checks.listForRef({
-          owner,
-          repo,
-          ref: pr.head.sha,
-        });
+      // 🔥 Merge
+      await context.octokit.pulls.merge({
+        owner,
+        repo,
+        pull_number: pr.number,
+      });
 
-        const allPassed = checks.data.check_runs.length > 0 &&
-          checks.data.check_runs.every(
-            (check) => check.conclusion === "success"
-          );
-
-        if (!allPassed) {
-          console.log("CI not passed yet");
-          return;
-        }
-
-        // 💬 Comment
-        await context.octokit.issues.createComment({
-          owner,
-          repo,
-          issue_number: prNumber,
-          body: "✅ CI Passed! Auto-merging PR 🚀",
-        });
-
-        // 🔥 Merge
-        await context.octokit.pulls.merge({
-          owner,
-          repo,
-          pull_number: prNumber,
-        });
-
-      } catch (err) {
-        console.log("Error:", err.message);
-      }
-
-    }, 15000); // wait 15 sec
+    } catch (err) {
+      console.log("Auto merge failed:", err.message);
+    }
 
   });
 
