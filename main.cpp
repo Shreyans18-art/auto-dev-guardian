@@ -1,6 +1,6 @@
 #include <iostream>
 
 int main() {
-    std::cout << "Final test last-final1" << std::endl;
+    std::cout << "Final test " << std::endl;
     return 0;
 }
