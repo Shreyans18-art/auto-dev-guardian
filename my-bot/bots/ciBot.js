@@ -1,48 +1,37 @@
 export default (app) => {
 
-  app.on("pull_request.synchronize", async (context) => {
+  app.on("check_run.completed", async (context) => {
 
-    const pr = context.payload.pull_request;
+    console.log("🔥 check_run event triggered");
+
+    const check = context.payload.check_run;
+
+    console.log("Conclusion:", check.conclusion);
+    console.log("PRs:", check.pull_requests);
+
+    if (check.conclusion !== "success") return;
+
+    const prs = check.pull_requests;
+    if (!prs || prs.length === 0) return;
+
+    const pr = prs[0];
 
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
 
-    const prNumber = pr.number;
-
     try {
-      // 🔍 Get status checks
-      const checks = await context.octokit.checks.listForRef({
-        owner,
-        repo,
-        ref: pr.head.sha,
-      });
+      console.log("🚀 Attempting merge...");
 
-      const allPassed = checks.data.check_runs.every(
-        (check) => check.conclusion === "success"
-      );
-
-      if (!allPassed) {
-        console.log("CI not passed yet");
-        return;
-      }
-
-      // 💬 Comment
-      await context.octokit.issues.createComment({
-        owner,
-        repo,
-        issue_number: prNumber,
-        body: "✅ All checks passed! Auto-merging PR 🚀",
-      });
-
-      // 🔥 Merge PR
       await context.octokit.pulls.merge({
         owner,
         repo,
-        pull_number: prNumber,
+        pull_number: pr.number,
       });
 
+      console.log("✅ MERGED SUCCESSFULLY");
+
     } catch (err) {
-      console.log("Error:", err.message);
+      console.log("❌ Merge failed:", err.message);
     }
 
   });
