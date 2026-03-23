@@ -1,37 +1,51 @@
 export default (app) => {
 
-  app.on("check_run.completed", async (context) => {
+  // 🔥 Trigger when CI (GitHub Actions) completes
+  app.on("check_suite.completed", async (context) => {
 
-    console.log("🔥 check_run event triggered");
+    const suite = context.payload.check_suite;
 
-    const check = context.payload.check_run;
-
-    console.log("Conclusion:", check.conclusion);
-    console.log("PRs:", check.pull_requests);
-
-    if (check.conclusion !== "success") return;
-
-    const prs = check.pull_requests;
-    if (!prs || prs.length === 0) return;
-
-    const pr = prs[0];
+    // Only continue if CI passed
+    if (suite.conclusion !== "success") {
+      console.log("CI not successful");
+      return;
+    }
 
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
 
     try {
-      console.log("🚀 Attempting merge...");
 
+      // 🔥 Get PR linked to this check
+      const prs = suite.pull_requests;
+
+      if (!prs || prs.length === 0) {
+        console.log("No PR linked");
+        return;
+      }
+
+      const pr = prs[0];
+      const pull_number = pr.number;
+
+      console.log("✅ CI passed — merging PR");
+
+      // 💬 Comment
+      await context.octokit.issues.createComment({
+        owner,
+        repo,
+        issue_number: pull_number,
+        body: "✅ CI Passed! Auto-merging PR 🚀",
+      });
+
+      // 🔥 Merge
       await context.octokit.pulls.merge({
         owner,
         repo,
-        pull_number: pr.number,
+        pull_number,
       });
 
-      console.log("✅ MERGED SUCCESSFULLY");
-
     } catch (err) {
-      console.log("❌ Merge failed:", err.message);
+      console.log("Merge failed:", err.message);
     }
 
   });
