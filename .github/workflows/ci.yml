@@ -4,39 +4,31 @@ on:
   push:
     branches:
       - main
-      - test-bot
+      - "*"
   pull_request:
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Checkout repository
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Debug current directory
-        run: pwd
-        
-      - name: List top-level files
-        run: ls
-        
-      - name: Full structure
-        run: ls -R  
-        
-      - name: Install Node.js
+      # Step 2: Setup Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-            node-version: '18'   
-        
-      - name: Debug folders
-        run: ls
-        
-      - name: Install g++
-        run: sudo apt-get update && sudo apt-get install -y g++
+          node-version: '18'
 
-      - name: Compile code
-        run: g++ main.cpp -o main
+      # Step 3: Install dependencies from my-bot
+      - name: Install dependencies (my-bot)
+        working-directory: my-bot
+        run: npm install
 
-      - name: Run program
-        run: ./main
+      # Step 4: Run FaultPulse system
+      - name: Run FaultPulse Bots
+        run: node core/runner.js https://example.com
