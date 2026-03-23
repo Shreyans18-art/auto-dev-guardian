@@ -32,3 +32,9 @@ jobs:
       # Step 4: Run FaultPulse system
       - name: Run FaultPulse Bots
         run: node core/runner.js https://example.com
+
+      - name: Upload FaultPulse Report
+        uses: actions/upload-artifact@v3
+        with:
+            name: faultpulse-report
+            path: reports/latest.json  
