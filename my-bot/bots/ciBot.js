@@ -14,7 +14,7 @@ export default (app) => {
 
     try {
 
-      // Get PR linked to commit
+      // 🔥 get PR linked to commit
       const prs = await context.octokit.repos.listPullRequestsAssociatedWithCommit({
         owner,
         repo,
@@ -22,14 +22,14 @@ export default (app) => {
       });
 
       if (!prs.data.length) {
-        console.log("No PR found");
+        console.log("No PR found for commit");
         return;
       }
 
       const pr = prs.data[0];
       const pull_number = pr.number;
 
-      console.log("🚀 Workflow complete — merging PR");
+      console.log("🚀 Auto-merging PR:", pull_number);
 
       await context.octokit.pulls.merge({
         owner,
