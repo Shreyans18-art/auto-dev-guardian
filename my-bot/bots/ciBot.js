@@ -1,13 +1,11 @@
 export default (app) => {
 
-  // 🔥 Trigger when CI (GitHub Actions) completes
-  app.on("check_suite.completed", async (context) => {
+  app.on("workflow_run.completed", async (context) => {
 
-    const suite = context.payload.check_suite;
+    const workflow = context.payload.workflow_run;
 
-    // Only continue if CI passed
-    if (suite.conclusion !== "success") {
-      console.log("CI not successful");
+    if (workflow.conclusion !== "success") {
+      console.log("Workflow not successful");
       return;
     }
 
@@ -16,28 +14,23 @@ export default (app) => {
 
     try {
 
-      // 🔥 Get PR linked to this check
-      const prs = suite.pull_requests;
+      // Get PR linked to commit
+      const prs = await context.octokit.repos.listPullRequestsAssociatedWithCommit({
+        owner,
+        repo,
+        commit_sha: workflow.head_sha,
+      });
 
-      if (!prs || prs.length === 0) {
-        console.log("No PR linked");
+      if (!prs.data.length) {
+        console.log("No PR found");
         return;
       }
 
-      const pr = prs[0];
+      const pr = prs.data[0];
       const pull_number = pr.number;
 
-      console.log("✅ CI passed — merging PR");
+      console.log("🚀 Workflow complete — merging PR");
 
-      // 💬 Comment
-      await context.octokit.issues.createComment({
-        owner,
-        repo,
-        issue_number: pull_number,
-        body: "✅ CI Passed! Auto-merging PR 🚀",
-      });
-
-      // 🔥 Merge
       await context.octokit.pulls.merge({
         owner,
         repo,

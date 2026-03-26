@@ -1,3 +1,24 @@
 {
-    "type": "module"
+  "type": "module",
+  "name": "auto-dev-guardian",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Shreyans18-art/auto-dev-guardian.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Shreyans18-art/auto-dev-guardian/issues"
+  },
+  "homepage": "https://github.com/Shreyans18-art/auto-dev-guardian#readme",
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  }
 }

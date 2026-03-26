@@ -25,16 +25,21 @@ jobs:
           node-version: '18'
 
       # Step 3: Install dependencies from my-bot
-      - name: Install dependencies (my-bot)
+      - name: Install root dependencies
+        run: npm install
+      
+      - name: Install my-bot dependencies
         working-directory: my-bot
         run: npm install
 
       # Step 4: Run FaultPulse system
       - name: Run FaultPulse Bots
-        run: node core/runner.js https://example.com
+        run: node core/runner.js https://google.com
 
       - name: Upload FaultPulse Report
         uses: actions/upload-artifact@v4
         with:
             name: faultpulse-report
-            path: reports/latest.json  
+            path: reports/latest.json
+            
+           

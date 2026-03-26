@@ -1,4 +1,5 @@
 import { createIssue } from "../utils/schema.js";
+import fetch from "node-fetch"
 
 export default async function networkBot(url) {
   const issues = [];
