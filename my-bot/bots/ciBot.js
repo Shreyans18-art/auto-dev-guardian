@@ -6,7 +6,7 @@ export default (app) => {
 
     const { workflow_run } = context.payload;
 
-    // 🛑 Only act on success
+    // 🛑 Only act on successful CI
     if (workflow_run.conclusion !== "success") return;
 
     const repo = context.payload.repository.name;
@@ -14,23 +14,19 @@ export default (app) => {
 
     console.log("🔥 Workflow completed, processing PR...");
 
-    // 🔍 Get PR linked to this workflow
-    const prs = await context.octokit.rest.actions.listWorkflowRunPullRequests({
-      owner,
-      repo,
-      run_id: workflow_run.id
-    });
+    // ✅ DIRECTLY GET PR FROM PAYLOAD
+    const prs = workflow_run.pull_requests;
 
-    if (prs.data.length === 0) {
-      console.log("❌ No PR found");
+    if (!prs || prs.length === 0) {
+      console.log("❌ No PR found in payload");
       return;
     }
 
-    const pr = prs.data[0];
+    const prNumber = prs[0].number;
 
-    console.log(`🔎 Found PR: #${pr.number}`);
+    console.log(`🔎 Found PR: #${prNumber}`);
 
-    // 📄 Read FaultPulse report
+    // 📄 Read report
     let report;
 
     try {
@@ -44,7 +40,7 @@ export default (app) => {
 
     const { decision, ai, trend } = report;
 
-    // 🧠 Build PR comment
+    // 💬 COMMENT
     const comment = `
 ## 🤖 FaultPulse AI Report
 
@@ -70,21 +66,18 @@ ${ai.recommendations.map(r => `- ${r}`).join("\n")}
 
 ### 📈 Trend
 ${trend.trend} — ${trend.prediction}
-
----
 `;
 
-    // 💬 Post comment
     await context.octokit.rest.issues.createComment({
       owner,
       repo,
-      issue_number: pr.number,
+      issue_number: prNumber,
       body: comment
     });
 
     console.log("💬 Comment added");
 
-    // 🚀 AUTO MERGE LOGIC
+    // 🚀 AUTO MERGE
     if (decision.status !== "CRITICAL") {
 
       console.log("🚀 Attempting auto-merge...");
@@ -93,7 +86,7 @@ ${trend.trend} — ${trend.prediction}
         await context.octokit.rest.pulls.merge({
           owner,
           repo,
-          pull_number: pr.number
+          pull_number: prNumber
         });
 
         console.log("✅ PR merged successfully");
