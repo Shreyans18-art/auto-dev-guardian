@@ -1,15 +1,30 @@
 import fs from "fs";
 import path from "path";
 
-const REPORT_DIR = "./reports";
-const REPORT_PATH = path.join(REPORT_DIR, "latest.json");
+const REPORT_PATH = path.resolve("./reports/latest.json");
 
-export function saveReport(data) {
-  // 🔥 Step 1: Ensure folder exists
-  if (!fs.existsSync(REPORT_DIR)) {
-    fs.mkdirSync(REPORT_DIR, { recursive: true });
+// Ensure reports folder exists
+function ensureDir() {
+  if (!fs.existsSync("./reports")) {
+    fs.mkdirSync("./reports", { recursive: true });
   }
+}
 
-  // 🔥 Step 2: Write file
-  fs.writeFileSync(REPORT_PATH, JSON.stringify(data, null, 2));
+// Save report (overwrite mode)
+export function saveReport(report) {
+  ensureDir();
+
+  fs.writeFileSync(
+    REPORT_PATH,
+    JSON.stringify(report, null, 2)
+  );
+}
+
+// Read report (used by GitHub bot later)
+export function readReport() {
+  if (!fs.existsSync(REPORT_PATH)) return null;
+
+  return JSON.parse(
+    fs.readFileSync(REPORT_PATH, "utf-8")
+  );
 }

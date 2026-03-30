@@ -1,58 +1,109 @@
+import { readFileSync } from "fs";
+
 export default (app) => {
 
-  // 🔥 DEBUG: log ALL incoming events
-  app.onAny((context) => {
-    console.log("📩 Event received:", context.name);
-  });
-
-  // 🔥 MAIN: listen for CI completion
   app.on("workflow_run.completed", async (context) => {
 
-    console.log("🔥 workflow_run.completed triggered");
+    const { workflow_run } = context.payload;
 
-    const workflow = context.payload.workflow_run;
+    // 🛑 Only act on success
+    if (workflow_run.conclusion !== "success") return;
 
-    console.log("Workflow conclusion:", workflow.conclusion);
+    const repo = context.payload.repository.name;
+    const owner = context.payload.repository.owner.login;
 
-    // ❌ If CI failed → do nothing
-    if (workflow.conclusion !== "success") {
-      console.log("❌ CI not successful, skipping merge");
+    console.log("🔥 Workflow completed, processing PR...");
+
+    // 🔍 Get PR linked to this workflow
+    const prs = await context.octokit.rest.actions.listWorkflowRunPullRequests({
+      owner,
+      repo,
+      run_id: workflow_run.id
+    });
+
+    if (prs.data.length === 0) {
+      console.log("❌ No PR found");
       return;
     }
 
-    const owner = context.payload.repository.owner.login;
-    const repo = context.payload.repository.name;
+    const pr = prs.data[0];
+
+    console.log(`🔎 Found PR: #${pr.number}`);
+
+    // 📄 Read FaultPulse report
+    let report;
 
     try {
+      report = JSON.parse(
+        readFileSync("./reports/latest.json", "utf-8")
+      );
+    } catch (err) {
+      console.log("❌ Report not found");
+      return;
+    }
 
-      // 🔍 Find PR linked to this commit
-      const prs = await context.octokit.repos.listPullRequestsAssociatedWithCommit({
-        owner,
-        repo,
-        commit_sha: workflow.head_sha,
-      });
+    const { decision, ai, trend } = report;
 
-      console.log("🔎 PRs found:", prs.data.length);
+    // 🧠 Build PR comment
+    const comment = `
+## 🤖 FaultPulse AI Report
 
-      if (!prs.data.length) {
-        console.log("❌ No PR found for this commit");
-        return;
+### 📊 Score: ${decision.score}
+### 🚦 Status: ${decision.status}
+
+---
+
+### 🧠 AI Summary
+${ai.summary}
+
+---
+
+### 🔍 Issues
+${ai.rootCauses.map(i => `- ${i}`).join("\n")}
+
+---
+
+### 🛠 Recommendations
+${ai.recommendations.map(r => `- ${r}`).join("\n")}
+
+---
+
+### 📈 Trend
+${trend.trend} — ${trend.prediction}
+
+---
+`;
+
+    // 💬 Post comment
+    await context.octokit.rest.issues.createComment({
+      owner,
+      repo,
+      issue_number: pr.number,
+      body: comment
+    });
+
+    console.log("💬 Comment added");
+
+    // 🚀 AUTO MERGE LOGIC
+    if (decision.status !== "CRITICAL") {
+
+      console.log("🚀 Attempting auto-merge...");
+
+      try {
+        await context.octokit.rest.pulls.merge({
+          owner,
+          repo,
+          pull_number: pr.number
+        });
+
+        console.log("✅ PR merged successfully");
+
+      } catch (err) {
+        console.log("❌ Merge failed:", err.message);
       }
 
-      const pr = prs.data[0];
-
-      console.log("🚀 Attempting to merge PR:", pr.number);
-
-      await context.octokit.pulls.merge({
-        owner,
-        repo,
-        pull_number: pr.number,
-      });
-
-      console.log("✅ PR merged successfully");
-
-    } catch (err) {
-      console.log("❌ Merge failed:", err.message);
+    } else {
+      console.log("⛔ Merge blocked due to CRITICAL issues");
     }
 
   });

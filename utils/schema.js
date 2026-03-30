@@ -14,3 +14,12 @@ export function createIssue({
     timestamp: new Date().toISOString()
   };
 }
+
+export function createResult({ bot, metrics = {}, issues = [] }) {
+  return {
+    bot,
+    status: issues.length === 0 ? "OK" : "FAIL",
+    metrics,
+    issues
+  };
+}
