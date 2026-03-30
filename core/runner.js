@@ -1,74 +1,94 @@
+import baselineAnalyzer from "../engine/baselineAnalyzer.js";
+import decisionEngine from "../engine/decisionEngine.js";
+import trendAnalyzer from "../engine/trendAnalyzer.js";
+import aiAnalyzer from "../engine/aiAnalyzer.js";
+import { saveReport } from "../engine/reportManager.js";
+
+// Bots
 import networkBot from "../bots/networkBot.js";
 import dnsBot from "../bots/dnsBot.js";
 import headersBot from "../bots/headersBot.js";
+import performanceBot from "../bots/performanceBot.js";
+import uptimeBot from "../bots/uptimeBot.js";
+import seoBot from "../bots/seoBot.js";
+import latencyBot from "../bots/latencyBot.js";
+import resourceBot from "../bots/resourceBot.js";
+import accessibilityBot from "../bots/accessibilityBot.js";
+import cachingBot from "../bots/cachingBot.js";
+import apiBot from "../bots/apiBot.js";
+import sslBot from "../bots/sslBot.js";
+import consoleBot from "../bots/consoleBot.js";
+import geoBot from "../bots/geoBot.js";
+import authBot from "../bots/authBot.js";
 
-import { saveReport } from "../engine/reportManager.js";
-import { evaluate } from "../engine/decisionEngine.js";
-
-const url = process.argv[2] || "https://example.com";
-
-async function runBotSafe(name, botFn) {
-  try {
-    console.log(`🚀 Running ${name}...`);
-    const result = await botFn(url);
-
-    if (!Array.isArray(result)) {
-      console.log(`⚠️ ${name} did not return array`);
-      return [];
-    }
-
-    console.log(`✅ ${name} completed with ${result.length} issues`);
-    return result;
-
-  } catch (err) {
-    console.log(`❌ ${name} failed:`, err.message);
-    return [
-      {
-        bot: name,
-        type: "BOT_FAILURE",
-        severity: "HIGH",
-        message: err.message,
-        fix: "Check bot implementation",
-        timestamp: new Date().toISOString()
-      }
-    ];
-  }
-}
+const url = process.argv[2];
 
 async function run() {
+
   console.log("🔥 Starting FaultPulse Runner...\n");
 
-  const results = await Promise.all([
-    runBotSafe("networkBot", networkBot),
-    runBotSafe("dnsBot", dnsBot),
-    runBotSafe("headersBot", headersBot)
-  ]);
+  // 🧠 BASELINE
+  const baseline = await baselineAnalyzer(url);
 
-  console.log("\n📦 Raw bot results:", JSON.stringify(results, null, 2));
+  // 🚀 BOTS
+  const bots = [
+    networkBot,
+    dnsBot,
+    headersBot,
+    performanceBot,
+    uptimeBot,
+    seoBot,
+    latencyBot,
+    resourceBot,
+    accessibilityBot,
+    cachingBot,
+    apiBot,
+    sslBot,
+    consoleBot,
+    geoBot,
+    authBot
+  ];
 
-  const issues = results.flat();
+  const results = await Promise.all(
+    bots.map(bot => bot(url, baseline))
+  );
 
-  console.log(`\n📊 Total Issues Found: ${issues.length}`);
+  // 📊 DECISION
+  const decision = decisionEngine(results, baseline);
 
-  const decision = evaluate(issues);
+  // 📈 TREND
+  const trend = trendAnalyzer({
+    timestamp: new Date().toISOString(),
+    decision
+  });
 
+  // 🤖 AI ANALYSIS
+  const ai = aiAnalyzer({
+    baseline,
+    results,
+    decision,
+    trend
+  });
+
+  // 📦 FINAL REPORT
   const report = {
     url,
     timestamp: new Date().toISOString(),
-    issues,
-    decision
+    baseline,
+    results,
+    decision,
+    trend,
+    ai
   };
 
   saveReport(report);
 
-  console.log("\n🧠 Final Decision:", decision);
+  console.log("\n📊 FINAL REPORT:");
+  console.log(JSON.stringify(report, null, 2));
 
-  // 🔥 Fail CI if needed
-  if (decision.status === "BLOCK") {
-    console.log("❌ Blocking CI due to critical issues");
+  // CI EXIT
+  if (decision.status === "CRITICAL") {
     process.exit(1);
-  } else {
-    console.log("✅ CI Passed");
   }
 }
 

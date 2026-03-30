@@ -1,33 +1,23 @@
 import dns from "dns/promises";
-import { createIssue } from "../utils/schema.js";
+import { createIssue, createResult } from "../utils/schema.js";
 
-export default async function dnsBot(url) {
+export default async function dnsBot(url, baseline) {
   const issues = [];
+  let ip = null;
 
   try {
-    const hostname = new URL(url).hostname;
-
-    const res = await dns.lookup(hostname);
-
-    if (!res.address) {
-      issues.push(createIssue({
-        bot: "dns",
-        type: "DNS_FAILURE",
-        severity: "CRITICAL",
-        message: `DNS resolution failed for ${hostname}`,
-        fix: "Check domain DNS settings"
-      }));
-    }
-
+    const host = new URL(url).hostname;
+    const res = await dns.lookup(host);
+    ip = res.address;
   } catch (err) {
     issues.push(createIssue({
       bot: "dns",
-      type: "DNS_ERROR",
+      type: "DNS_FAIL",
       severity: "CRITICAL",
       message: err.message,
-      fix: "Verify domain and DNS provider"
+      fix: "Check DNS configuration"
     }));
   }
 
-  return issues;
+  return createResult({ bot: "dns", metrics: { ip }, issues });
 }

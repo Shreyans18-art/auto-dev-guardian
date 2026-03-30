@@ -1,46 +1,52 @@
-import { createIssue } from "../utils/schema.js";
-import fetch from "node-fetch"
+import fetch from "node-fetch";
+import { createIssue, createResult } from "../utils/schema.js";
 
-export default async function networkBot(url) {
+export default async function networkBot(url, baseline) {
+
   const issues = [];
+  let responseTime = 0;
 
   try {
     const start = Date.now();
-
     const res = await fetch(url);
-    const time = Date.now() - start;
+    responseTime = Date.now() - start;
 
-    // ❌ HTTP errors
+    // 🔥 dynamic threshold
+    const threshold = baseline.thresholds.responseTime;
+
+    if (responseTime > threshold) {
+      issues.push(createIssue({
+        bot: "network",
+        type: "SLOW_RESPONSE",
+        severity: "MEDIUM",
+        message: `${responseTime}ms > ${threshold}`,
+        fix: "Optimize backend/CDN"
+      }));
+    }
+
     if (!res.ok) {
       issues.push(createIssue({
         bot: "network",
         type: "HTTP_ERROR",
         severity: "HIGH",
-        message: `Status ${res.status} on ${url}`,
-        fix: "Check server routes or backend API"
-      }));
-    }
-
-    // ⚠️ Slow response
-    if (time > 3000) {
-      issues.push(createIssue({
-        bot: "network",
-        type: "SLOW_RESPONSE",
-        severity: "MEDIUM",
-        message: `Response time ${time}ms`,
-        fix: "Optimize backend or use caching/CDN"
+        message: `Status ${res.status}`,
+        fix: "Fix backend"
       }));
     }
 
   } catch (err) {
     issues.push(createIssue({
       bot: "network",
-      type: "REQUEST_FAILED",
+      type: "FAIL",
       severity: "CRITICAL",
       message: err.message,
-      fix: "Check server availability or DNS"
+      fix: "Check server"
     }));
   }
 
-  return issues;
+  return createResult({
+    bot: "network",
+    metrics: { responseTime },
+    issues
+  });
 }

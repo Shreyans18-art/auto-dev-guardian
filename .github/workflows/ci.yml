@@ -1,45 +1,37 @@
-name: CI Pipeline
+name: FaultPulse CI
 
 on:
   push:
-    branches:
-      - main
-      - "*"
+    branches: [ main ]
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
-  build:
+  faultpulse:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout repository
+      # 🧾 STEP 1 — Checkout repo
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      # Step 2: Setup Node.js
+      # ⚙️ STEP 2 — Setup Node
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: 18
 
-      # Step 3: Install dependencies from my-bot
-      - name: Install root dependencies
-        run: npm install
-      
-      - name: Install my-bot dependencies
-        working-directory: my-bot
+      # 📦 STEP 3 — Install dependencies
+      - name: Install dependencies
         run: npm install
 
-      # Step 4: Run FaultPulse system
-      - name: Run FaultPulse Bots
-        run: node core/runner.js https://google.com
+      # 🚀 STEP 4 — Run FaultPulse
+      - name: Run FaultPulse
+        run: node core/runner.js https://example.com
 
+      # 📤 STEP 5 — Upload report artifact
       - name: Upload FaultPulse Report
         uses: actions/upload-artifact@v4
         with:
-            name: faultpulse-report
-            path: reports/latest.json
-            
-           
+          name: faultpulse-report
+          path: reports/latest.json
