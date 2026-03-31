@@ -1,43 +1,68 @@
-export default function aiAnalyzer({ baseline, results, decision, trend }) {
+import fetch from "node-fetch";
 
-  let summary = "";
-  let fixes = [];
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-  // 🧠 SUMMARY
-  if (decision.status === "HEALTHY") {
-    summary = "System is healthy with no major issues.";
-  }
+export default async function aiAnalyzer({ baseline, results, decision, trend }) {
 
-  if (decision.status === "DEGRADED") {
-    summary = "System performance is degraded. Some issues detected affecting stability.";
-  }
-
-  if (decision.status === "CRITICAL") {
-    summary = "Critical issues detected. Immediate action required.";
-  }
-
-  // 🔍 ROOT CAUSE ANALYSIS
   const issues = results.flatMap(r => r.issues);
 
-  for (const issue of issues) {
-    fixes.push(`Fix ${issue.type}: ${issue.fix}`);
-  }
-
-  // 📈 TREND INSIGHT
-  let trendInsight = "";
-
-  if (trend.trend === "DECLINING") {
-    trendInsight = "Performance is decreasing over time. System may fail soon.";
-  } else if (trend.trend === "IMPROVING") {
-    trendInsight = "System stability is improving.";
-  } else {
-    trendInsight = "System is stable.";
-  }
-
-  return {
-    summary,
-    rootCauses: issues.map(i => i.type),
-    recommendations: fixes.slice(0, 5),
-    trendInsight
+  // 🧠 Prepare compact input for AI
+  const input = {
+    baseline,
+    decision,
+    trend,
+    issues: issues.map(i => ({
+      type: i.type,
+      severity: i.severity,
+      message: i.message
+    }))
   };
+
+  try {
+
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: "You are a senior DevOps engineer analyzing website health reports."
+          },
+          {
+            role: "user",
+            content: `
+Analyze this system report and give:
+1. Summary
+2. Root cause
+3. Recommendations
+4. Risk level
+
+Data:
+${JSON.stringify(input, null, 2)}
+`
+          }
+        ]
+      })
+    });
+
+    const data = await response.json();
+
+    const text = data.choices?.[0]?.message?.content || "AI analysis failed";
+
+    return {
+      explanation: text
+    };
+
+  } catch (err) {
+
+    return {
+      explanation: "AI service unavailable",
+      error: err.message
+    };
+  }
 }

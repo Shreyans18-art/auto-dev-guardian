@@ -13,52 +13,55 @@ function ensureHistory() {
   }
 }
 
+// 📈 Calculate % change
+function calculateChange(prev, current) {
+  if (!prev) return 0;
+  return ((current - prev) / prev) * 100;
+}
+
 export default function trendAnalyzer(currentReport) {
 
   ensureHistory();
 
   const history = JSON.parse(fs.readFileSync(HISTORY_PATH, "utf-8"));
 
-  // store current run
+  const currentScore = currentReport.decision.score;
+
+  const last = history.length > 0 ? history[history.length - 1] : null;
+
+  const change = last
+    ? calculateChange(last.score, currentScore)
+    : 0;
+
+  // 📈 Determine direction
+  let direction = "STABLE";
+  let message = "System stable";
+
+  if (change < -5) {
+    direction = "DECLINING";
+    message = "System performance degrading over time";
+  } else if (change > 5) {
+    direction = "IMPROVING";
+    message = "System performance improving";
+  }
+
+  // 🧠 store current
   history.push({
     timestamp: currentReport.timestamp,
-    score: currentReport.decision.score
+    score: currentScore
   });
 
-  // keep last 10 runs only
+  // keep last 10 runs
   if (history.length > 10) {
     history.shift();
   }
 
   fs.writeFileSync(HISTORY_PATH, JSON.stringify(history, null, 2));
 
-  // 📈 ANALYSIS
-  let trend = "STABLE";
-  let prediction = "No immediate risk";
-
-  if (history.length >= 3) {
-    const last = history.slice(-3);
-
-    if (
-      last[0].score > last[1].score &&
-      last[1].score > last[2].score
-    ) {
-      trend = "DECLINING";
-      prediction = "System health decreasing, possible degradation soon";
-    }
-
-    if (
-      last[0].score < last[1].score &&
-      last[1].score < last[2].score
-    ) {
-      trend = "IMPROVING";
-      prediction = "System performance improving";
-    }
-  }
-
   return {
-    history,
-    trend,
-    prediction
+    direction,
+    change: `${change.toFixed(2)}%`,
+    message,
+    history
   };
 }
