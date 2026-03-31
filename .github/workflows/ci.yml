@@ -27,7 +27,9 @@ jobs:
 
       # 🚀 STEP 4 — Run FaultPulse
       - name: Run FaultPulse
-        run: node core/runner.js https://example.com
+        run: node core/runner.js https://google.com
+        env:
+         OPENAI_API_KEY: ${{secrets.OPENAI_API_KEY}}
 
       # 📤 STEP 5 — Upload report artifact
       - name: Upload FaultPulse Report

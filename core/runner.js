@@ -81,7 +81,14 @@ async function run() {
     ai
   };
 
-  saveReport(report);
+  saveReport({
+  url,
+  baseline,
+  results,
+  decision,
+  trend,
+  ai
+});
 
   console.log("\n📊 FINAL REPORT:");
   console.log(JSON.stringify(report, null, 2));
