@@ -13,10 +13,17 @@ function ensureHistory() {
   }
 }
 
-// 📈 Calculate % change
-function calculateChange(prev, current) {
-  if (!prev) return 0;
-  return ((current - prev) / prev) * 100;
+// 📈 Calculate slope
+function calculateSlope(history) {
+  if (history.length < 2) return 0;
+
+  let totalChange = 0;
+
+  for (let i = 1; i < history.length; i++) {
+    totalChange += history[i].score - history[i - 1].score;
+  }
+
+  return totalChange / (history.length - 1);
 }
 
 export default function trendAnalyzer(currentReport) {
@@ -27,41 +34,54 @@ export default function trendAnalyzer(currentReport) {
 
   const currentScore = currentReport.decision.score;
 
-  const last = history.length > 0 ? history[history.length - 1] : null;
-
-  const change = last
-    ? calculateChange(last.score, currentScore)
-    : 0;
-
-  // 📈 Determine direction
-  let direction = "STABLE";
-  let message = "System stable";
-
-  if (change < -5) {
-    direction = "DECLINING";
-    message = "System performance degrading over time";
-  } else if (change > 5) {
-    direction = "IMPROVING";
-    message = "System performance improving";
-  }
-
-  // 🧠 store current
+  // add current
   history.push({
     timestamp: currentReport.timestamp,
     score: currentScore
   });
 
-  // keep last 10 runs
+  // keep last 10
   if (history.length > 10) {
     history.shift();
   }
 
   fs.writeFileSync(HISTORY_PATH, JSON.stringify(history, null, 2));
 
+  // 📈 TREND
+  let direction = "STABLE";
+  let message = "System stable";
+
+  if (history.length >= 3) {
+    const slope = calculateSlope(history);
+
+    if (slope < -5) {
+      direction = "DECLINING";
+      message = "Performance degrading over time";
+    } else if (slope > 5) {
+      direction = "IMPROVING";
+      message = "Performance improving";
+    }
+  }
+
+  // 🔮 PREDICTION
+  let prediction = "No risk detected";
+
+  if (history.length >= 3) {
+    const slope = calculateSlope(history);
+
+    const futureScore = currentScore + slope * 2;
+
+    if (futureScore < 60) {
+      prediction = "⚠️ High risk: system may become CRITICAL soon";
+    } else if (futureScore < 75) {
+      prediction = "⚠️ Moderate risk: degradation likely to continue";
+    }
+  }
+
   return {
     direction,
-    change: `${change.toFixed(2)}%`,
     message,
+    prediction,
     history
   };
 }

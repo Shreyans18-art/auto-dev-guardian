@@ -6,11 +6,13 @@ export default async function aiAnalyzer({ baseline, results, decision, trend })
 
   const issues = results.flatMap(r => r.issues);
 
-  // 🧠 Prepare compact input for AI
   const input = {
-    baseline,
-    decision,
-    trend,
+    systemType: baseline.type,
+    complexity: baseline.complexity,
+    score: decision.score,
+    status: decision.status,
+    trend: trend.direction,
+    prediction: trend.prediction,
     issues: issues.map(i => ({
       type: i.type,
       severity: i.severity,
@@ -31,19 +33,44 @@ export default async function aiAnalyzer({ baseline, results, decision, trend })
         messages: [
           {
             role: "system",
-            content: "You are a senior DevOps engineer analyzing website health reports."
+            content: `
+You are an advanced DevOps AI system.
+
+Think like:
+- Site Reliability Engineer
+- Backend Performance Expert
+- Security Analyst
+
+Your job:
+1. Identify root cause (not symptoms)
+2. Detect failure chain (how issues connect)
+3. Predict future failure
+4. Suggest ONE priority fix
+5. Give preventive actions
+
+Be sharp, concise, and technical.
+Return ONLY JSON.
+`
           },
           {
             role: "user",
             content: `
-Analyze this system report and give:
-1. Summary
-2. Root cause
-3. Recommendations
-4. Risk level
+Analyze this system:
 
-Data:
 ${JSON.stringify(input, null, 2)}
+
+Return JSON:
+
+{
+  "summary": "",
+  "rootCause": "",
+  "failureChain": [],
+  "riskLevel": "",
+  "prediction": "",
+  "confidence": "",
+  "priorityFix": "",
+  "preventiveActions": []
+}
 `
           }
         ]
@@ -52,17 +79,37 @@ ${JSON.stringify(input, null, 2)}
 
     const data = await response.json();
 
-    const text = data.choices?.[0]?.message?.content || "AI analysis failed";
+    let text = data.choices?.[0]?.message?.content || "{}";
 
-    return {
-      explanation: text
-    };
+    let parsed;
+
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      parsed = {
+        summary: text,
+        rootCause: "Parsing failed",
+        failureChain: [],
+        riskLevel: "UNKNOWN",
+        prediction: "Unavailable",
+        confidence: "LOW",
+        priorityFix: "Check logs manually",
+        preventiveActions: []
+      };
+    }
+
+    return parsed;
 
   } catch (err) {
-
     return {
-      explanation: "AI service unavailable",
-      error: err.message
+      summary: "AI unavailable",
+      rootCause: err.message,
+      failureChain: [],
+      riskLevel: "UNKNOWN",
+      prediction: "Unavailable",
+      confidence: "LOW",
+      priorityFix: "Retry later",
+      preventiveActions: []
     };
   }
 }

@@ -126,7 +126,10 @@ export function saveReport({ url, baseline, results, decision, trend, ai }) {
 
     trend,
 
-    ai
+    ai:{
+      ...ai,
+      generatedAt: new Date().toISOString()
+    }
   };
 
   fs.writeFileSync(

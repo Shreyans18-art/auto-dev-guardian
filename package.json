@@ -19,6 +19,11 @@
   },
   "homepage": "https://github.com/Shreyans18-art/auto-dev-guardian#readme",
   "dependencies": {
-    "node-fetch": "^3.3.2"
+    "chart.js": "^4.5.1",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.0",
+    "express": "^5.2.1",
+    "node-fetch": "^3.3.2",
+    "react-chartjs-2": "^5.3.1"
   }
 }
