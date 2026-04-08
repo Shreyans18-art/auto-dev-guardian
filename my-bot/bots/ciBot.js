@@ -1,3 +1,5 @@
+import { readFileSync } from "fs";
+
 export default (app) => {
 
   app.on("workflow_run.completed", async (context) => {
@@ -9,7 +11,7 @@ export default (app) => {
     const owner = context.payload.repository.owner.login;
     const repo = context.payload.repository.name;
 
-    console.log("🔥 Workflow completed, processing PR...");
+    console.log("🔥 Workflow completed");
 
     const prs = workflow_run.pull_requests;
 
@@ -20,28 +22,133 @@ export default (app) => {
 
     const prNumber = prs[0].number;
 
-    console.log(`✅ PR FOUND: ${prNumber}`);
+    console.log(`🔎 PR FOUND: #${prNumber}`);
+
+    // 📄 READ REPORT
+    let report;
+
+    try {
+      report = JSON.parse(
+        readFileSync("./reports/latest.json", "utf-8")
+      );
+    } catch {
+      console.log("❌ Report not found");
+      return;
+    }
+
+    const { summary, trend, ai } = report;
+
+    const status = summary.status;
+    const risk = ai?.riskLevel || "LOW";
+
+    // 💬 COMMENT TEMPLATE
+    const comment = `
+## 🤖 FaultPulse Report
+
+### 📊 Score: ${summary.score}
+### 🚦 Status: ${status}
+### ⚠️ Risk: ${risk}
+
+---
+
+### 🧠 AI Summary
+${ai.summary}
+
+---
+
+### 🔮 Prediction
+${ai.prediction}
+
+---
+
+### 🛠 Recommended Actions
+${(ai.actions || []).map(a => `- ${a}`).join("\n")}
+
+---
+`;
 
     await context.octokit.rest.issues.createComment({
       owner,
       repo,
       issue_number: prNumber,
-      body: "🚀 Auto-tested & ready to merge by FaultPulse"
+      body: comment
     });
 
     console.log("💬 Comment added");
 
-    try {
-      await context.octokit.rest.pulls.merge({
+    // 🚫 BLOCK CRITICAL
+    if (status === "CRITICAL") {
+      console.log("⛔ Blocking merge (CRITICAL)");
+      return;
+    }
+
+    // ⚠️ DEGRADED → warn only
+    if (status === "DEGRADED") {
+      console.log("⚠️ Degraded system → no auto merge");
+
+      // add label
+      await context.octokit.rest.issues.addLabels({
         owner,
         repo,
-        pull_number: prNumber
+        issue_number: prNumber,
+        labels: ["⚠️ degraded"]
       });
 
-      console.log("🚀 MERGED SUCCESSFULLY");
+      return;
+    }
 
-    } catch (err) {
-      console.log("❌ Merge failed:", err.message);
+    // 🔥 HIGH RISK → label + warning
+    if (risk === "HIGH") {
+
+      console.log("🚨 High risk detected");
+
+      await context.octokit.rest.issues.addLabels({
+        owner,
+        repo,
+        issue_number: prNumber,
+        labels: ["🚨 high-risk"]
+      });
+
+      return;
+    }
+
+    // 🐞 REPEATED FAILURE → create issue
+    if (trend?.direction === "DECLINING" && trend?.history?.length >= 3) {
+
+      console.log("🐞 Repeated degradation → creating issue");
+
+      await context.octokit.rest.issues.create({
+        owner,
+        repo,
+        title: "⚠️ FaultPulse: System degradation detected",
+        body: `
+System performance is declining over multiple runs.
+
+Prediction:
+${trend.prediction}
+
+Action required immediately.
+`
+      });
+    }
+
+    // ✅ HEALTHY → AUTO MERGE
+    if (status === "HEALTHY") {
+
+      console.log("🚀 Auto-merging PR...");
+
+      try {
+        await context.octokit.rest.pulls.merge({
+          owner,
+          repo,
+          pull_number: prNumber
+        });
+
+        console.log("✅ PR MERGED");
+
+      } catch (err) {
+        console.log("❌ Merge failed:", err.message);
+      }
     }
 
   });
