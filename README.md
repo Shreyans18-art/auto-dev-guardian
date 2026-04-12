@@ -115,9 +115,9 @@ npx serve .
 
 ## 🌐 URLs
 
-* Dashboard → http://localhost:5173
-* Backend → http://localhost:5000
-* Test Page → http://localhost:3000/test.html
+
+
+Deployed Link = https://auto-dev-guardian.onrender.com/
 
 ---
 
