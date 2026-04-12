@@ -164,3 +164,7 @@ Detect → Explain → Fix → Visualize
 
 FaultPulse is not just a tool —
 it’s a **developer assistant that thinks.**
+## ⚖️ License
+This project is **Proprietary**. All rights are reserved by the author. 
+No one is permitted to distribute, modify, or use this software for any purpose 
+without explicit permission.
