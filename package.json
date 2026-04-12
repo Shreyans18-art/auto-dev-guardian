@@ -13,7 +13,8 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "UNLICENSED",
+  "private": true,
   "bugs": {
     "url": "https://github.com/Shreyans18-art/auto-dev-guardian/issues"
   },
