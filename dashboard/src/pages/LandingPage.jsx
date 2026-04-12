@@ -4,7 +4,7 @@ import { useScan } from '../context/ScanContext.jsx';
 export default function LandingPage() {
   const navigate = useNavigate();
   const { setScanTarget } = useScan();
-
+  // console.log(`${import.meta.env.VITE_BACKEND_URL}`)
   const handleStart = () => {
     setScanTarget({ type: 'website' });
     navigate('/scan/website');

@@ -13,6 +13,25 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Serve static files from dashboard dist with correct MIME types
+const dashboardDistPath = path.join(__dirname, 'dashboard', 'dist');
+app.use(express.static(dashboardDistPath, {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript');
+    } else if (filePath.endsWith('.css')) {
+      res.setHeader('Content-Type', 'text/css');
+    } else if (filePath.endsWith('.json')) {
+      res.setHeader('Content-Type', 'application/json');
+    }
+  }
+}));
+
+// Fallback to index.html for client-side routing
+app.get('/', (req, res) => {
+  res.sendFile(path.join(dashboardDistPath, 'index.html'));
+});
+
 const RUM_PATH = path.resolve("./reports/rum.json");
 
 
@@ -379,6 +398,11 @@ app.post("/api/ai-explain", async (req, res) => {
   if (!explanation) explanation = localExplain(message);
   aiCache[message] = explanation;
   res.json({ explanation, fix: explanation });
+});
+
+// SPA fallback - serve index.html for all non-API routes
+app.get(/^(?!\/api\/)/, (req, res) => {
+  res.sendFile(path.join(__dirname, 'dashboard', 'dist', 'index.html'));
 });
 
 app.listen(5000, () => {
