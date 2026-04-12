@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useScan } from '../context/ScanContext.jsx';
 
 const SDK_SNIPPET = `<!-- Add this to your website's <head> tag -->
-<script src="http://localhost:5000/sdk/faultpulse.js"></script>`;
+<script src={${import.meta.env.VITE_BACKEND_URL}/sdk/faultpulse.js}></script>`;
 
 export default function SDKSetupModal({ onClose, onConnected }) {
   const [copied, setCopied] = useState(false);

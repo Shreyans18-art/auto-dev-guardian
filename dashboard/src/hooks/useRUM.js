@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useScan } from '../context/ScanContext.jsx';
 
-const API = 'http://localhost:5000/api/rum';
+const API = `${import.meta.env.VITE_BACKEND_URL}/api/rum`;
 
 export function useRUM(pollInterval = 5000) {
   const { runtimeErrors, setRuntimeErrors } = useScan();

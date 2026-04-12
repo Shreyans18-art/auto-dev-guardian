@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 
-const API = 'http://localhost:5000/api/ai-explain';
+const API = `${import.meta.env.VITE_BACKEND_URL}/api/ai-explain`;
 const cache = {};
 
 export function useAIExplain() {

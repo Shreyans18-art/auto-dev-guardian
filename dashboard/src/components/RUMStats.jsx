@@ -6,7 +6,7 @@ export default function RUMStats() {
 
   useEffect(() => {
     axios
-      .get("http://localhost:5000/api/rum")
+      .get(`${import.meta.env.VITE_BACKEND_URL}/api/rum`)
       .then(res => setData(res.data))
       .catch(err => console.error(err));
   }, []);
