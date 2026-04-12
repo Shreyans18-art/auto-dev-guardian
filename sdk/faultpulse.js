@@ -1,6 +1,6 @@
 (function () {
 
-  const endpoint = "http://localhost:5000/api/rum";
+  const endpoint = `${import.meta.env.VITE_BACKEND_URL}/api/rum`;
 
   function sendData(payload) {
     fetch(endpoint, {

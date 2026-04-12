@@ -8,7 +8,7 @@ export default function ErrorList() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await axios.get("http://localhost:5000/api/rum");
+        const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/rum`);
 
         const errData = res.data.filter(d => d.type === "error");
 
@@ -34,7 +34,7 @@ export default function ErrorList() {
         uniqueErrors.forEach(async (item) => {
           try {
             const resAI = await axios.post(
-              "http://localhost:5000/api/ai-explain",
+              `${import.meta.env.VITE_BACKEND_URL}/api/ai-explain`,
               { message: item.data.message }
             );
 

@@ -1,7 +1,7 @@
 export default function BotProgressLoader({ progress, url }) {
   const done  = progress.filter(b => b.status !== 'running').length;
   const total = 15;
-  const pct   = Math.round((done / total) * 100);
+  const pct   = Math.round(((progress.length > 0 ? done : 0) / total) * 100);
 
   return (
     <div style={{ width: '100%', maxWidth: 640, animation: 'fadeInUp 0.4s ease' }}>
@@ -14,20 +14,24 @@ export default function BotProgressLoader({ progress, url }) {
           margin: '0 auto 20px',
         }} />
         <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 8 }}>
-          <span className="gradient-text">Running Scan…</span>
+          <span className="gradient-text">Running Real Scan…</span>
         </h2>
         <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>
           {url}
+        </p>
+        <p style={{ color: 'var(--text-dim)', fontSize: 12, marginTop: 6 }}>
+          Making live HTTP checks — results are real, not simulated
         </p>
       </div>
 
       {/* Progress bar */}
       <div style={{
         height: 4, background: 'var(--border)',
-        borderRadius: 2, overflow: 'hidden', marginBottom: 24,
+        borderRadius: 2, overflow: 'hidden', marginBottom: 8,
       }}>
         <div style={{
-          height: '100%', width: `${pct}%`,
+          height: '100%',
+          width: progress.length === 0 ? '5%' : `${Math.max(5, pct)}%`,
           background: 'linear-gradient(90deg, var(--primary), var(--cyan))',
           borderRadius: 2, transition: 'width 0.4s ease',
         }} />
@@ -61,7 +65,7 @@ export default function BotProgressLoader({ progress, url }) {
                     animation: 'spin 0.8s linear infinite',
                     display: 'inline-block',
                   }} />
-                  Running…
+                  Checking…
                 </span>
               )}
               {bot.status === 'pass' && <span className="badge badge-pass">✓ Pass</span>}
